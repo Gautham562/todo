@@ -150,7 +150,7 @@ body{
 
     <div class="myday">
         <h2>My Day</h2>
-        <p>27th February 2023</p>
+        <p>27th Auguest 2026</p>
     </div>
 
     <div class="main-content">
@@ -159,9 +159,9 @@ body{
         <div class="left-panel">
 
             <div class="task-list">
-
+                {% for task in tasks %}
                 <div class="task-card">
-                    <span>This is some Task</span>
+                 <span>{{ task.task }}</span>
 
                     <div class="task-actions">
                         <button class="done">✓ Mark as Done</button>
@@ -169,13 +169,15 @@ body{
                         <button class="edit">✎</button>
                     </div>
                 </div>
-
+                {% endfor %}
             </div>
-
+            <form action="{% url 'addTask' %}" method="POST">
+            {% csrf_token %}
             <div class="add-task">
-                <input type="text" placeholder="Add a task">
-                <button>+ Add</button>
+                <input type="text" name='task' placeholder="Add a task">
+                <button type="submit">Add</button>
             </div>
+        </form>
 
         </div>
 
