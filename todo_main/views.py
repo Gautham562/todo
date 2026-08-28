@@ -1,14 +1,14 @@
 from django.shortcuts import render, redirect
-from todo.models import Task
+from todo.models import Task, Category
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from todo.forms import RegisterForm
-
 
 @login_required
 def home(request):
 
     query = request.GET.get('q')
+    category = request.GET.get('category')
 
     tasks = Task.objects.filter(
         user=request.user,
@@ -22,14 +22,22 @@ def home(request):
 
     if query:
         tasks = tasks.filter(task__icontains=query)
-
         completed_tasks = completed_tasks.filter(
             task__icontains=query
         )
 
+    if category:
+        tasks = tasks.filter(category_id=category)
+        completed_tasks = completed_tasks.filter(
+            category_id=category
+        )
+
+    categories = Category.objects.all()
+
     context = {
         'tasks': tasks,
         'completed_tasks': completed_tasks,
+        'categories': categories,
         'query': query,
     }
 
