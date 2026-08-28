@@ -1,8 +1,48 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from todo.models import Task
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from todo.forms import RegisterForm
+
+
+@login_required
 def home(request):
-    tasks=Task.objects.filter(is_completed=False).order_by('-updated_at')
-    context={
+
+    query = request.GET.get('q')
+
+    tasks = Task.objects.filter(
+        user=request.user,
+        is_completed=False
+    ).order_by('-updated_at')
+
+    completed_tasks = Task.objects.filter(
+        user=request.user,
+        is_completed=True
+    )
+
+    if query:
+        tasks = tasks.filter(task__icontains=query)
+
+        completed_tasks = completed_tasks.filter(
+            task__icontains=query
+        )
+
+    context = {
         'tasks': tasks,
-             }
-    return render(request,'home.html',context)
+        'completed_tasks': completed_tasks,
+        'query': query,
+    }
+
+    return render(request, 'home.html', context)
+
+def register(request):
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('login')
+    else:
+        form = RegisterForm()
+    return render(request, "register.html", {"form": form})

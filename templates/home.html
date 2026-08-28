@@ -18,19 +18,20 @@ body{
 }
 
 .container{
-    width:90%;
-    margin:20px auto;
+    width: 95%;
+    max-width: 1400px;
+    margin: 20px auto;
 }
 
 .title{
     text-align:center;
-    font-size:40px;
+    font-size:18px;
     font-weight:600;
     margin-bottom:30px;
 }
 
 .myday h2{
-    font-size:32px;
+    font-size:18px;
     margin-bottom:5px;
 }
 
@@ -46,15 +47,15 @@ body{
 }
 
 .left-panel{
-    flex:2;
+    flex:1.5;
 }
 
 .right-panel{
-    flex:1;
+    flex:1.2;
 }
 
 .task-list{
-    height:500px;
+    height:350px;
     overflow-y:auto;
     background:white;
     border:1px solid #ddd;
@@ -66,7 +67,7 @@ body{
     background:white;
     border:1px solid #ddd;
     border-radius:10px;
-    padding:15px;
+    padding:4px;
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -75,7 +76,8 @@ body{
 
 .task-actions{
     display:flex;
-    gap:8px;
+    gap:10px;
+    flex-shrink: 0s;
 }
 
 .task-actions button{
@@ -87,15 +89,35 @@ body{
 }
 
 .done{
-    background:#198754;
+    background: #198754;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;   /* Prevent text from breaking */
 }
-
 .delete{
     background:#dc3545;
+    width: 50px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 6px;
 }
 
 .edit{
     background:#0d6efd;
+    color: white;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 40px;
+    padding: 10px 15px;
+    text-decoration: none;
+    border-radius: 6px;
 }
 
 .completed-box{
@@ -104,12 +126,16 @@ body{
     border-radius:10px;
     padding:15px;
 }
-
 .completed-item{
     border:1px solid #e5e5e5;
     border-radius:8px;
     padding:12px;
     margin-top:10px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
 }
 
 .add-task{
@@ -119,7 +145,7 @@ body{
 
 .add-task input{
     flex:1;
-    padding:18px;
+    padding:10px;
     border:1px solid #ddd;
     border-radius:10px 0 0 10px;
     outline:none;
@@ -147,37 +173,70 @@ body{
 <div class="container">
 
     <h1 class="title">Django ToDo App</h1>
-
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2>Welcome, {{ request.user.username }}</h2>
+<form action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">
+        Logout
+    </button>
+</form>
+</div>
     <div class="myday">
         <h2>My Day</h2>
-        <p>27th Auguest 2026</p>
+        <p>{% now "d F Y" %}</p>
     </div>
 
     <div class="main-content">
 
         <!-- Pending Tasks -->
         <div class="left-panel">
-
+<form method="GET" style="margin-bottom: 15px;">
+    <input type="text" name="q" value="{{ quey }}" placeholder="Search Task..." style="padding: 10px; width: 80%;border: 1px solid #ddd;border-radius: 6px;">
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
             <div class="task-list">
                 {% for task in tasks %}
                 <div class="task-card">
-                 <span>{{ task.task }}</span>
+                    <span>
+    <strong>{{ task.task }}</strong>
+    {% if task.priority == 'High' %}
+        🔴 High
+    {% elif task.priority == 'Medium' %}
+        🟡 Medium
+    {% else %}
+        🟢 Low
+    {% endif %}
 
-                    <div class="task-actions">
-                        <button class="done">✓ Mark as Done</button>
-                        <button class="delete">🗑</button>
-                        <button class="edit">✎</button>
-                    </div>
-                </div>
-                {% endfor %}
+    <br>
+
+    Due: {{ task.due_date }}
+</span>
+    <div class="task-actions">
+
+       <a class="done" href="{% url 'mark_as_done' task.id %}">✓ Mark as Done</a> 
+        <a class="delete" href="{% url 'delete_task' task.id %}" a>🗑</a>
+        <a class="edit" href="{% url 'edit_task' task.id %}">✎</a> 
+        
+    </div>
+</div>
+{% endfor %}
             </div>
-            <form action="{% url 'addTask' %}" method="POST">
+
+           <form method="POST" action="{% url 'addTask' %}" class="add-task">
             {% csrf_token %}
-            <div class="add-task">
-                <input type="text" name='task' placeholder="Add a task">
-                <button type="submit">Add</button>
-            </div>
-        </form>
+          <input type="text" name="task" placeholder="Add a task" required>
+
+    <select name="priority">
+        <option value="High">High</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="Low">Low</option>
+    </select>
+
+    <input type="date" name="due_date" required>
+
+    <button type="submit">+ Add</button>
+</form>
 
         </div>
 
@@ -186,17 +245,26 @@ body{
 
             <div class="completed-box">
                 <h3>Completed Tasks</h3>
+                 {% for task in completed_tasks %}
 
-                <div class="completed-item">
-                    This is the completed task.
-                </div>
-            </div>
+<div class="completed-item">
 
+    <span>{{ task.task }}</span>
+
+    <a class="done"
+       href="{% url 'mark_as_undone' task.id %}">
+        ↩ Mark as Undone
+    </a>
+
+</div>
+{% endfor %}
+ </div>
         </div>
-
+        </div>
     </div>
-
 </div>
 
 </body>
 </html>
+
+
